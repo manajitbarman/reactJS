@@ -9,34 +9,49 @@ const { Header, Content, Footer } = Layout;
 const { Step } = Steps;
 
 var initUser = {
-    createdBy:1,
-    createdDate:1589650615000,
-    updatedBy:1,
-    updatedDate:1589650615000,
-    userId:6,
-    userType:'',
+    userType:'parent',
     firstName:"",
     lastName:"",
     phone:"",
     email:"",
-    password: "",
-    activeFlag:false,
-    inactivatedDate:null,
-    subscriptionLevel:null,
-    dob:null,
-    gender:null,
-    userAddresses: [],
-    userInGroups: [],
-    plan: '',
+    
+    userAddresses: [
+      {
+        addressType: "Home",
+        addressLine1: "",
+        city: "",
+        state: "",
+        country: "",
+        postalCode: "",
+        phone: "",
+        email: ""
+      }
+    ],
+    userInGroups: [
+      {
+        groupAdmin: true,
+        userGroup: {
+          groupName: ""
+        }
+      }
+    ],
+    // plan: '',
 }
 var initAddress = {
-  streetNumber: "",
+  postalCode: "",
   addressLine1: "",
-  addressLine2: "",
-  streetName: "",
+  addressType: "Home",
   country: "",
   city: "",
   state: "",
+  phone: "",
+  email: ""
+}
+
+var initService = {
+  serviceCategory: "",
+  serviceName: "",
+  serviceDesc:""
 }
 
 const steps = [
@@ -60,7 +75,7 @@ const steps = [
 function Register (props) {
 
   useEffect(() => {
-    getUser();
+    // getUser();
     return () => {
       unmounted.current = true;
       requestHelper.abortAll();
@@ -72,9 +87,12 @@ function Register (props) {
 
   const [user, setUser] = useState({...initUser});
   const [address, setAddress] = useState({...initAddress});
+  const [service, setService] = useState({...initService});
+  const [password, setPass] = useState('');
+  const [confirmPassword, setRePass] = useState('');
   const [groupName, setGroupName] = useState('');
   const [plan, selectedPlan] =  useState('Select your Service Plan');
-  const [service, addService] = useState(false);
+  const [show, addService] = useState(false);
   const [current, setState] = useState(0);
 
   
@@ -97,7 +115,20 @@ function Register (props) {
   }
 
   const next = () => {
-    setState(current => ++current);
+    if(current === 0) {
+      console.log('=======>', password, confirmPassword);
+      if(!password || !confirmPassword) {
+        message.error('Password is required');
+      } else  if(password !== confirmPassword) {
+        message.error('Password not match!');
+      } else if(password.length < 8) {
+        message.error('Password must be more than 8 characters!');
+      } else {
+        setState(current => ++current);
+      }
+    } else {
+      setState(current => ++current);
+    }
   }
 
   const prev =() => {
@@ -105,7 +136,14 @@ function Register (props) {
   }
 
   const newService = () => {
-    addService(service => true);
+    console.log('============service', service);
+     return requestHelper
+      .registerRequest(UserApi.createService(service))
+      .then(res => {
+        console.log('==>', res.data);
+        message.success('Service successfully created.');
+        addService(show => true);
+      });
   }
 
   const selectPlan = (value) => {
@@ -113,6 +151,8 @@ function Register (props) {
   }
 
   const onSubmit = () => {
+    address.email = user.email;
+    address.phone = user.phone;
     user.userAddresses[0] = address;
     user.userInGroups[0].userGroup.groupName = groupName;
     user.plan = plan;
@@ -123,6 +163,17 @@ function Register (props) {
         console.log('==>', res.data);
         message.success('Successfully Updated.')
       })
+  }
+
+  const changePass = (param, value) => {
+    switch(param) {
+      case 'password':
+        setPass(password => value);
+        break;
+      case 'rePassword':
+        setRePass(confirmPassword => value);
+        break;
+    }
   }
 
   const changeProfile = (param, value) => {
@@ -151,21 +202,27 @@ function Register (props) {
           phone: value
         }));
         break;
-      case 'password':
-        setUser(user => ({
-          ...user,
-          password: value
-        }));
-        break;
+      // case 'password':
+      //   setUser(user => ({
+      //     ...user,
+      //     password: value
+      //   }));
+      //   break;
+      //   case 'rePassword':
+      //   setUser(user => ({
+      //     ...user,
+      //     confirmPassword: value
+      //   }));
+      //   break;
     }
   }
 
   const changeAddress = (param, value) => {
     switch(param) {
-      case 'streetNumber':
+      case 'postalCode':
         setAddress(address => ({
           ...address,
-          streetNumber: value
+          postalCode: value
         }));
         break;
       case 'line1':
@@ -174,17 +231,17 @@ function Register (props) {
           addressLine1: value
         }));
         break;
-      case 'line2':
-        setAddress(address => ({
-          ...address,
-          addressLine2: value
-        }));
-        break;
-      case 'streetName':
-        setAddress(address => ({
-          ...address,
-          streetName: value
-        }));
+      // case 'line2':
+      //   setAddress(address => ({
+      //     ...address,
+      //     addressLine2: value
+      //   }));
+      //   break;
+      // case 'streetName':
+      //   setAddress(address => ({
+      //     ...address,
+      //     streetName: value
+      //   }));
         break;
       case 'city':
         setAddress(address => ({
@@ -207,6 +264,28 @@ function Register (props) {
     }
   }
 
+  const changeService = (param, value) => {
+    switch(param) {
+      case 0:
+        setService(service => ({
+          ...service,
+          serviceCategory: value
+        }));
+        break;
+      case 1:
+        setService(service => ({
+          ...service,
+          serviceName: value
+        }));
+        break;
+      case 2:
+      setService(service => ({
+        ...service,
+        serviceDesc: value
+      }));
+      break;
+    }
+  }
   const changeGroupName = (value) => {
     setGroupName(groupName => value);
   }
@@ -274,18 +353,18 @@ function Register (props) {
             </Row>
             <Row style={{padding: '10px 0'}}>
               <Col span={3} offset={1}>
-                <p style={{padding: '5px 0'}}>Password</p>
+                <p style={{padding: '5px 0'}} >Password</p>
               </Col>
               <Col span={7}>
-                 <Input.Password placeholder="Password" />
+                 <Input.Password placeholder="Password" value={password} onChange={(e) => changePass('password', e.target.value)}/>
               </Col>
             </Row>
             <Row style={{padding: '10px 0'}}>
               <Col span={3} offset={1}>
-                <p style={{padding: '5px 0'}}>Confirm Password</p>
+                <p style={{padding: '5px 0'}} >Confirm Password</p>
               </Col>
               <Col span={7}>
-                 <Input.Password placeholder="Confirm Password" onChange={() => changeProfile()}/>
+                 <Input.Password placeholder="Confirm Password" value={confirmPassword} onChange={(e) => changePass('rePassword', e.target.value)}/>
               </Col>
             </Row>
             </>
@@ -298,7 +377,7 @@ function Register (props) {
                 <p style={{padding: '5px 0'}}>Street Number</p>
               </Col>
               <Col span={7}>
-                 <Input placeholder="Street Number"  value={address.streetNumber} onChange={(e) => changeAddress('streetNumber', e.target.value)}/>
+                 <Input placeholder="Street Number"  value={address.postalCode} onChange={(e) => changeAddress('postalCode', e.target.value)}/>
               </Col>
               <Col span={3} offset={2}>
                 <p style={{padding: '5px 0'}}>Address line1</p>
@@ -312,13 +391,13 @@ function Register (props) {
                 <p style={{padding: '5px 0'}}>Street Name</p>
               </Col>
               <Col span={7}>
-                 <Input placeholder="Street Name" value={address.streetName} onChange={(e) => changeAddress('streetName', e.target.value)}/>
+                 <Input placeholder="Street Name" value={address.streetName} />
               </Col>
               <Col span={3} offset={2}>
                 <p style={{padding: '5px 0'}}>Address line2</p>
               </Col>
               <Col span={7}>
-                 <Input placeholder="Address line2" value={address.addressLine2} onChange={(e) => changeAddress('line2', e.target.value)}/>
+                 <Input placeholder="Address line2" value={address.addressLine2} />
               </Col>
             </Row>
             <Row style={{padding: '10px 0'}}>
@@ -360,7 +439,7 @@ function Register (props) {
                   <p style={{padding: '5px 0'}}>Service Name</p>
                   </Col>
                   <Col span={14}>
-                    <Input placeholder="Service Name" />
+                    <Input placeholder="Service Name" value={service.serviceName} onChange={(e) => changeService(1, e.target.value)}/>
                   </Col>
                 </Row>
                 <Row style={{padding: '10px 0'}}>
@@ -368,7 +447,7 @@ function Register (props) {
                   <p style={{padding: '5px 0'}}>Service Description</p>
                   </Col>
                   <Col span={14}>
-                    <Input placeholder="Service Description" />
+                    <Input placeholder="Service Description" value={service.serviceDesc} onChange={(e) => changeService(2, e.target.value)}/>
                   </Col>
                 </Row>
                 <Row style={{padding: '10px 0'}}>
@@ -376,7 +455,7 @@ function Register (props) {
                   <p style={{padding: '5px 0'}}>Service Content</p>
                   </Col>
                   <Col span={14}>
-                    <Input placeholder="Service Content" />
+                    <Input placeholder="Service Content"  value={service.serviceCategory} onChange={(e) => changeService(0, e.target.value)}/>
                   </Col>
                 </Row>
                 <Row justify="space-around">
@@ -384,14 +463,14 @@ function Register (props) {
                     <hr></hr>
                   </Col>
                 </Row>
-                {service && (
+                {show && (
                   <>
                   <Row style={{padding: '10px 0'}}>
                   <Col span={6} offset={2}>
                   <p style={{padding: '5px 0'}}>Service Name</p>
                   </Col>
                   <Col span={14}>
-                    <Input placeholder="Service Name" />
+                    <Input placeholder="Service Name" value={service.serviceName} onChange={(e) => changeService(1, e.target.value)}/>
                   </Col>
                 </Row>
                 <Row style={{padding: '10px 0'}}>
@@ -399,7 +478,7 @@ function Register (props) {
                   <p style={{padding: '5px 0'}}>Service Description</p>
                   </Col>
                   <Col span={14}>
-                    <Input placeholder="Service Description" />
+                    <Input placeholder="Service Description" value={service.serviceDesc} onChange={(e) => changeService(2, e.target.value)}/>
                   </Col>
                 </Row>
                 <Row style={{padding: '10px 0'}}>
@@ -407,7 +486,7 @@ function Register (props) {
                   <p style={{padding: '5px 0'}}>Service Content</p>
                   </Col>
                   <Col span={14}>
-                    <Input placeholder="Service Content" />
+                    <Input placeholder="Service Content" value={service.serviceCategory} onChange={(e) => changeService(0, e.target.value)}/>
                   </Col>
                 </Row>
                 <Row justify="space-around">
