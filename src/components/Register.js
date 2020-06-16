@@ -155,13 +155,13 @@ function Register (props) {
     address.phone = user.phone;
     user.userAddresses[0] = address;
     user.userInGroups[0].userGroup.groupName = groupName;
-    user.plan = plan;
-    console.log('updated user ====>', user);
+    // user.plan = plan;
+    console.log('Create user ====>', user);
     return requestHelper
-      .registerRequest(UserApi.updateProfile(user))
+      .registerRequest(UserApi.createUser(user))
       .then(res => {
         console.log('==>', res.data);
-        message.success('Successfully Updated.')
+        message.success('Successfully created.')
       })
   }
 
