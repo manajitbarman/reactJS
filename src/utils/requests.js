@@ -27,7 +27,7 @@ export default class requests {
           resetAuthHeaders();
           // window.location.reload();
         }
-        return Promise.reject(err);
+        return Promise.reject(err.response.data);
       });
     return this._chains[key];
   }

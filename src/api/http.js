@@ -3,7 +3,8 @@ import { apiHost, CONSTANTS } from '../config/global';
 import { toFormData, uriEncode } from '../utils/features';
 import { getCookie } from '../utils/cookie';
 
-axios.defaults.baseURL = 'http://ec2-35-174-156-7.compute-1.amazonaws.com:8080';
+// axios.defaults.baseURL = 'http://ec2-54-221-115-44.compute-1.amazonaws.com:8080';
+// axios.defaults.baseURL = 'http://ec2-3-95-152-173.compute-1.amazonaws.com:8080';
 axios.defaults.headers.common['Content-Type'] = 'application/json';
 
 
@@ -22,7 +23,7 @@ export function setAuthHeaders(token) {
     }
   }
 
-function requestFactory({ method, url, data, formData, options }) {
+function requestFactory({ method, baseUrl, url, data, formData, options }) {
     const { disableAuthorization, ...other } = options || {};
     const REQUEST = function() {
       let promise;
@@ -45,6 +46,7 @@ function requestFactory({ method, url, data, formData, options }) {
       }
       return promise;
     };
+    axios.defaults.baseURL = baseUrl;
     REQUEST.url = url;
     REQUEST.data = formData ? toFormData(formData) : data;
     REQUEST.options = { paramsSerializer: uriEncode, ...other };
@@ -64,7 +66,7 @@ export default {
      * @param {boolean} [options.disableAuthorization] - disabled auth header
      * @returns {Function} - wrapper for request
      */
-    get: (url, options) => requestFactory({ method: 'get', url, options }),
+    get: (baseUrl, url, options) => requestFactory({ method: 'get', baseUrl, url, options }),
     /**
      * to simply send a request use like this post(url, {options: {params:{test: 'test'}}, data: 'hello world'})()
      * will send a post request to "url?test=test" with request body 'hello world'
@@ -77,7 +79,7 @@ export default {
      * @param {boolean} [options.disableAuthorization] - disabled auth header
      * @returns {Function} - wrapper for request
      */
-    post: (url, { data, formData, options } = {}) => requestFactory({ method: 'post', url, data, formData, options }),
+    post: (baseUrl, url, { data, formData, options } = {}) => requestFactory({ method: 'post', baseUrl, url, data, formData, options }),
     /**
      * to simply send a request use like this put(url, {options: {params:{test: 'test'}}, data: 'hello world'})()
      * will send a put request to "url?test=test" with request body 'hello world'
@@ -90,7 +92,7 @@ export default {
      * @param {boolean} [options.disableAuthorization] - disabled auth header
      * @returns {Function} - wrapper for request
      */
-    put: (url, { data, formData, options } = {}) => requestFactory({ method: 'put', url, data, formData, options }),
+    put: (baseUrl, url, { data, formData, options } = {}) => requestFactory({ method: 'put', baseUrl, url, data, formData, options }),
     /**
      * to simply send a request use like this post(url, {params: {test: 'test'}})()
      * will send a delete request to "url?test=test"
@@ -101,5 +103,5 @@ export default {
      * @param {boolean} [options.disableAuthorization] - disabled auth header
      * @returns {Function} - wrapper for request
      */
-    delete: (url, options) => requestFactory({ method: 'delete', url, options })
+    delete: (baseUrl, url, options) => requestFactory({ method: 'delete',baseUrl,  url, options })
   };

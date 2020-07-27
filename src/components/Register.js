@@ -19,6 +19,9 @@ var initUser = {
       {
         addressType: "Home",
         addressLine1: "",
+        addressLine2:"",
+        streetNumber: "",
+        streetName: "",
         city: "",
         state: "",
         country: "",
@@ -87,14 +90,12 @@ function Register (props) {
 
   const [user, setUser] = useState({...initUser});
   const [address, setAddress] = useState({...initAddress});
-  const [service, setService] = useState({...initService});
   const [password, setPass] = useState('');
   const [confirmPassword, setRePass] = useState('');
   const [groupName, setGroupName] = useState('');
   const [plan, selectedPlan] =  useState('Select your Service Plan');
-  const [show, addService] = useState(false);
   const [current, setState] = useState(0);
-
+  const [serviceViews, setServiceViews] = useState([initService]);
   
 
   function getUser() {
@@ -136,14 +137,29 @@ function Register (props) {
   }
 
   const newService = () => {
-    console.log('============service', service);
-     return requestHelper
-      .registerRequest(UserApi.createService(service))
+    if(!serviceViews[0].serviceCategory || !serviceViews[0].serviceDesc || !serviceViews[0].serviceName) {
+      message.error('All service fields are required!');
+      return;
+    } else {
+      let newService = {
+        wisorsService: {}
+      };
+      newService.wisorsService = serviceViews[serviceViews.length - 1];
+      return requestHelper
+      .registerRequest(UserApi.createService(newService))
       .then(res => {
-        console.log('==>', res.data);
-        message.success('Service successfully created.');
-        addService(show => true);
-      });
+          console.log('==>', res, res.data);
+          message.success('Service successfully created!');
+          setServiceViews(serviceViews => [...serviceViews, initService]);
+      })
+      .catch(err => {
+        if(err.errorMessage.indexOf('Service Name') > -1) {
+          message.error(`ServiceName "${serviceViews[serviceViews.length - 1].serviceName}" already exist!`)
+        } else {
+          message.error('Service creation failed!');
+        }
+    });
+    }
   }
 
   const selectPlan = (value) => {
@@ -161,8 +177,18 @@ function Register (props) {
       .registerRequest(UserApi.createUser(user))
       .then(res => {
         console.log('==>', res.data);
-        message.success('Successfully created.')
+        message.success('Successfully created!')
       })
+      .catch(err => {
+        console.log('==========>', err.errors[0].arguments[0].code);
+        if(err.errors[0].arguments[0].code === 'phone') {
+          message.error(`Invalid PhoneNumber!`);
+        } else if(err.errors[0].arguments[0].code === 'email'){
+          message.error('Invalid Email!');
+        } else {
+          message.error('Register failed!');
+        }
+    });
   }
 
   const changePass = (param, value) => {
@@ -231,17 +257,23 @@ function Register (props) {
           addressLine1: value
         }));
         break;
-      // case 'line2':
-      //   setAddress(address => ({
-      //     ...address,
-      //     addressLine2: value
-      //   }));
-      //   break;
-      // case 'streetName':
-      //   setAddress(address => ({
-      //     ...address,
-      //     streetName: value
-      //   }));
+      case 'line2':
+        setAddress(address => ({
+          ...address,
+          addressLine2: value
+        }));
+        break;
+      case 'streetName':
+        setAddress(address => ({
+          ...address,
+          streetName: value
+        }));
+        break;
+      case 'streetNumber':
+        setAddress(address => ({
+          ...address,
+          streetNumber: value
+        }));
         break;
       case 'city':
         setAddress(address => ({
@@ -264,25 +296,16 @@ function Register (props) {
     }
   }
 
-  const changeService = (param, value) => {
+  const changeService = (index, param, value) => {
     switch(param) {
-      case 0:
-        setService(service => ({
-          ...service,
-          serviceCategory: value
-        }));
+      case 'content':
+        serviceViews[index].serviceCategory = value;
         break;
-      case 1:
-        setService(service => ({
-          ...service,
-          serviceName: value
-        }));
+      case 'name':
+        serviceViews[index].serviceName = value;
         break;
-      case 2:
-      setService(service => ({
-        ...service,
-        serviceDesc: value
-      }));
+      case 'desc':
+        serviceViews[index].serviceDesc = value;
       break;
     }
   }
@@ -377,13 +400,13 @@ function Register (props) {
                 <p style={{padding: '5px 0'}}>Street Number</p>
               </Col>
               <Col span={7}>
-                 <Input placeholder="Street Number"  value={address.postalCode} onChange={(e) => changeAddress('postalCode', e.target.value)}/>
+                 <Input placeholder="Street Number"  value={address.streetNumber} onChange={(e) => changeAddress('streetNumber', e.target.value)}/>
               </Col>
               <Col span={3} offset={2}>
-                <p style={{padding: '5px 0'}}>Address line1</p>
+                <p style={{padding: '5px 0'}}>Zip Code</p>
               </Col>
               <Col span={7}>
-                 <Input placeholder="Confirm Password" value={address.addressLine1} onChange={(e) => changeAddress('line1', e.target.value)}/>
+                 <Input placeholder="" value={address.postalCode} onChange={(e) => changeAddress('postalCode', e.target.value)}/>
               </Col>
             </Row>
             <Row style={{padding: '10px 0'}}>
@@ -391,13 +414,13 @@ function Register (props) {
                 <p style={{padding: '5px 0'}}>Street Name</p>
               </Col>
               <Col span={7}>
-                 <Input placeholder="Street Name" value={address.streetName} />
+                 <Input placeholder="Street Name" value={address.streetName} onChange={(e) => changeAddress('streetName', e.target.value)}/>
               </Col>
               <Col span={3} offset={2}>
-                <p style={{padding: '5px 0'}}>Address line2</p>
+                <p style={{padding: '5px 0'}}>Address line1</p>
               </Col>
               <Col span={7}>
-                 <Input placeholder="Address line2" value={address.addressLine2} />
+                 <Input placeholder="" value={address.addressLine1} onChange={(e) => changeAddress('line1', e.target.value)}/>
               </Col>
             </Row>
             <Row style={{padding: '10px 0'}}>
@@ -406,6 +429,12 @@ function Register (props) {
               </Col>
               <Col span={7}>
                  <Input placeholder="City" value={address.city} onChange={(e) => changeAddress('city', e.target.value)}/>
+              </Col>
+              <Col span={3} offset={2}>
+                <p style={{padding: '5px 0'}}>Address line2</p>
+              </Col>
+              <Col span={7}>
+                 <Input placeholder="Address line2" value={address.addressLine2} onChange={(e) => changeAddress('line2', e.target.value)}/>
               </Col>
             </Row>
             <Row style={{padding: '10px 0'}}>
@@ -433,76 +462,47 @@ function Register (props) {
           {current == 2 && (
             <>
             <Row >
-              <Col span={12}>
-                <Row style={{padding: '10px 0'}}>
-                  <Col span={6} offset={2}>
-                  <p style={{padding: '5px 0'}}>Service Name</p>
-                  </Col>
-                  <Col span={14}>
-                    <Input placeholder="Service Name" value={service.serviceName} onChange={(e) => changeService(1, e.target.value)}/>
-                  </Col>
-                </Row>
-                <Row style={{padding: '10px 0'}}>
-                  <Col span={6} offset={2}>
-                  <p style={{padding: '5px 0'}}>Service Description</p>
-                  </Col>
-                  <Col span={14}>
-                    <Input placeholder="Service Description" value={service.serviceDesc} onChange={(e) => changeService(2, e.target.value)}/>
-                  </Col>
-                </Row>
-                <Row style={{padding: '10px 0'}}>
-                  <Col span={6} offset={2}>
-                  <p style={{padding: '5px 0'}}>Service Content</p>
-                  </Col>
-                  <Col span={14}>
-                    <Input placeholder="Service Content"  value={service.serviceCategory} onChange={(e) => changeService(0, e.target.value)}/>
-                  </Col>
-                </Row>
-                <Row justify="space-around">
-                  <Col span={18}>
-                    <hr></hr>
-                  </Col>
-                </Row>
-                {show && (
-                  <>
-                  <Row style={{padding: '10px 0'}}>
-                  <Col span={6} offset={2}>
-                  <p style={{padding: '5px 0'}}>Service Name</p>
-                  </Col>
-                  <Col span={14}>
-                    <Input placeholder="Service Name" value={service.serviceName} onChange={(e) => changeService(1, e.target.value)}/>
-                  </Col>
-                </Row>
-                <Row style={{padding: '10px 0'}}>
-                  <Col span={6} offset={2}>
-                  <p style={{padding: '5px 0'}}>Service Description</p>
-                  </Col>
-                  <Col span={14}>
-                    <Input placeholder="Service Description" value={service.serviceDesc} onChange={(e) => changeService(2, e.target.value)}/>
-                  </Col>
-                </Row>
-                <Row style={{padding: '10px 0'}}>
-                  <Col span={6} offset={2}>
-                  <p style={{padding: '5px 0'}}>Service Content</p>
-                  </Col>
-                  <Col span={14}>
-                    <Input placeholder="Service Content" value={service.serviceCategory} onChange={(e) => changeService(0, e.target.value)}/>
-                  </Col>
-                </Row>
-                <Row justify="space-around">
-                  <Col span={18}>
-                    <hr></hr>
-                  </Col>
-                </Row>
-                </>
+               <Col span={12}>
+                {serviceViews.map((view, index) => 
+                  <Row key={index}>
+                      <Row style={{padding: '10px 0', width: '100%'}}>
+                        <Col span={6} offset={2}>
+                        <p style={{padding: '5px 0'}}>Service Name</p>
+                        </Col>
+                        <Col span={14}>
+                          <Input placeholder="Service Name" onChange={(e) => changeService(index,'name', e.target.value)}/>
+                        </Col>
+                      </Row>
+                      <Row style={{padding: '10px 0', width: '100%'}}>
+                        <Col span={6} offset={2}>
+                        <p style={{padding: '5px 0'}}>Service Description</p>
+                        </Col>
+                        <Col span={14}>
+                          <Input placeholder="Service Description" onChange={(e) => changeService(index, 'desc', e.target.value)}/>
+                        </Col>
+                      </Row>
+                      <Row style={{padding: '10px 0', width: '100%'}}>
+                        <Col span={6} offset={2}>
+                        <p style={{padding: '5px 0'}}>Service Content</p>
+                        </Col>
+                        <Col span={14}>
+                          <Input placeholder="Service Content" onChange={(e) => changeService(index, 'content', e.target.value)}/>
+                        </Col>
+                      </Row>
+                      <Row justify="space-around" style={{width: '100%'}}>
+                        <Col span={18}>
+                          <hr></hr>
+                        </Col>
+                      </Row>
+                      <Row justify="space-around" style={{width: '100%'}}>
+                        <Col span={4} style={{padding: '10px 0'}}>
+                        <Button type="primary" icon={<PlusOutlined />} onClick={() => newService()}>
+                          Add Services
+                        </Button>
+                        </Col>
+                      </Row>
+                    </Row>
                 )}
-                <Row justify="space-around">
-                  <Col span={4} style={{padding: '10px 0'}}>
-                  <Button type="primary" icon={<PlusOutlined />} onClick={() => newService()}>
-                    Add Services
-                  </Button>
-                  </Col>
-                </Row>
               </Col>
               <Col span={12}>
                 <Row>

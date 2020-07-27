@@ -6,6 +6,8 @@ import { Switch, Route } from 'react-router-dom';
 import Register from './components/Register';
 import { ConnectedRouter } from 'connected-react-router';
 import { store, history } from './store/store';
+import Content from './components/Content';
+import Promo from './components/Promo';
 
 const initValues = {
   message: 'Failed',
@@ -18,7 +20,9 @@ const App = () => {
     <Provider store={store}>
     <ConnectedRouter history={history}>
       <Switch>
-        <Route exact path="/" component={Register}></Route>
+        <Route exact path="/user" component={Register}></Route>
+        <Route exact path="/content" component={Content}></Route>
+        <Route exact path="/promo" component={Promo}></Route>
       </Switch>
     </ConnectedRouter>
   </Provider>
