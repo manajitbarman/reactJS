@@ -11,7 +11,7 @@
     "connected-react-router": "^6.8.0",
     "history": "^4.10.1",
     "js-cookie": "^2.2.1",
-    "marked": "^1.1.0",
+    "marked": "^4.0.10",
     "prop-types": "^15.7.2",
     "react": "^16.13.1",
     "react-dom": "^16.13.1",
